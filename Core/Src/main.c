@@ -55,6 +55,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 void init_I2C_GPIO(void);
 void initI2C(void);
+void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR);
 
 /**
   * @brief  The application entry point.
@@ -201,6 +202,27 @@ void initI2C(void) {
 	
 	// Enable I2C peripheral
 	I2C1->CR1 |= I2C_CR1_PECEN;
+}
+
+// wOrR = 0, write; wOrR = 1, read
+void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
+	// Set the slave address in the SADD[7:1] bit field
+	I2C1->CR2 &= (~I2C_CR2_SADD_Msk);
+  I2C1->CR2 |= (slaveAddr << 1);  //[7:1] is the slave address
+
+	I2C1->CR2 &= (~I2C_CR2_NBYTES_Msk);
+	// Set the number of data byte to be transmitted in the NBYTES[7:0] bit field.
+	I2C1->CR2 |= (nBytes << I2C_CR2_NBYTES_Pos);
+
+	I2C1->CR2 &= (~I2C_CR2_RD_WRN_Msk);
+	// Configure the RD_WRN to indicate a read/write operation.
+	I2C1->CR2 |= (wOrR << I2C_CR2_RD_WRN_Pos);
+
+	// Do not set the AUTOEND bit, this lab requires software start/stop operation. 
+	I2C1->CR2 &= (~I2C_CR2_AUTOEND_Msk);
+	
+	// Setting the START bit to begin the address frame.
+	I2C1->CR2 |= I2C_CR2_START;
 }
 
 #ifdef  USE_FULL_ASSERT
