@@ -191,18 +191,20 @@ void init_I2C_GPIO(void) {
 	GPIOC->ODR |= (1 << 0);
 }
 
+
 void initI2C(void) {
   init_I2C_GPIO();
-	
+	// Enable the I2C2 peripheral in the RCC.
+	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 	// Config I2C Bus Timing
-	I2C1->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
-	I2C1->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);
-	I2C1->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
-	I2C1->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
-	I2C1->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+	I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
+	I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);
+	I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
+	I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
+	I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
 	
 	// Enable I2C peripheral
-	I2C1->CR1 |= I2C_CR1_PECEN;
+	I2C2->CR1 |= I2C_CR1_PECEN;
 }
 
 // wOrR = 0, write; wOrR = 1, read
