@@ -191,6 +191,51 @@ void init_I2C_GPIO(void) {
 	GPIOC->ODR |= (1 << 0);
 }
 
+void transmitOneChar(uint8_t ch) {
+  while ((USART3->ISR & USART_ISR_TXE) == 0) {
+	}
+	USART3->TDR = ch;
+}
+
+void transmitCharArray (char *arr) {
+  while (*arr != '\0') {
+		transmitOneChar(*arr);
+		arr++;
+	}
+}
+
+void initUsart3(void) {
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN; // Enable peripheral clock to PC
+	// PC4 TX, PC5 RX
+	// set pc4 to AF mode, 0x10
+	GPIOC->MODER |= (1 << 9);
+	GPIOC->MODER &= ~(1 << 8);
+	// set pc5 to AF mode, 0x10
+	GPIOC->MODER |= (1 << 11);
+	GPIOC->MODER &= ~(1 << 10);
+	
+	// set PC4 AFRL to 0001: AF1
+	GPIOC->AFR[0] |= (0x1 << GPIO_AFRL_AFRL4_Pos);
+	// set PC5 AFRL to 0001: AF1
+	GPIOC->AFR[0] |= (0x1 << GPIO_AFRL_AFRL5_Pos);
+  RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+
+	uint32_t fClk = HAL_RCC_GetHCLKFreq();
+	
+	// set baud rate
+	uint32_t baudRate = 115200;
+	uint32_t usartBRR = fClk / baudRate;
+	USART3->BRR = usartBRR;
+
+	// enable the transmitter and receiver hardware of USART3
+	USART3->CR1 |= USART_CR1_TE;
+	USART3->CR1 |= USART_CR1_RE;
+	
+	// Enable USART peripheral.
+	USART3->CR1 |= USART_CR1_UE;
+}
+
+char slaveNoRepMsg[20] = "Slave no response!";
 
 void initI2C(void) {
   init_I2C_GPIO();
@@ -205,6 +250,39 @@ void initI2C(void) {
 	
 	// Enable I2C peripheral
 	I2C2->CR1 |= I2C_CR1_PECEN;
+	setUpSlaveTransaction(0x6B, 1, 0);
+	// Wait until either of the TXIS or NACKF flags are set
+	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+	}
+	if (I2C2->ISR & I2C_ISR_NACKF) {
+	  transmitCharArray(slaveNoRepMsg);
+	}
+	// Write the address of the “WHO_AM_I” register into the I2C transmit register
+	I2C2->TXDR = 0x0F;
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
+	// start read operation
+	setUpSlaveTransaction(0x6B, 1, 1);
+	
+	// Wait until either of the RXNE or NACKF flags are set
+	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+	}
+	
+	if (I2C2->ISR & I2C_ISR_NACKF) {
+	  transmitCharArray(slaveNoRepMsg);
+	}
+	
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
+	
+	uint8_t readData = I2C2->RXDR;
+	if (readData == 0xD4) {
+		transmitCharArray("read data match");
+	} else {
+	  transmitCharArray("read data not match");
+	}
 }
 
 // wOrR = 0, write; wOrR = 1, read
