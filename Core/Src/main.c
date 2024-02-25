@@ -155,39 +155,40 @@ void Error_Handler(void)
 
 /* USER CODE END 0 */
 void init_I2C_GPIO(void) {
-  // Enable peripheral clock to PC
+  // Enable peripheral clock to PB and PC
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	// set PB6 to AF mode, 0x10
-	GPIOB->MODER |= (1 << 13);
-	GPIOB->MODER &= ~(1 << 12);
-	// set PB7 to AF mode, 0x10
-	GPIOB->MODER |= (1 << 15);
-	GPIOB->MODER &= ~(1 << 14);
-	// set PB8 to AF mode, 0x10
-	GPIOB->MODER |= (1 << 17);
-	GPIOB->MODER &= ~(1 << 16);
-	// set PB9 to AF mode, 0x10
-	GPIOB->MODER |= (1 << 19);
-	GPIOB->MODER &= ~(1 << 18);
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+
+	// set PB11 to AF mode, 10
+	GPIOB->MODER |= (1 << 23);
+	GPIOB->MODER &= ~(1 << 22);
+	// set PB13 to AF mode, 10
+	GPIOB->MODER |= (1 << 27);
+	GPIOB->MODER &= ~(1 << 26);
+	// Set PB14 to output mode, 01
+	GPIOB->MODER &= ~(1 << 29);
+	GPIOB->MODER |= (1 << 28);
+	// Set PC0 to output mode, 01
+	GPIOC->MODER &= ~(1 << 1);
+	GPIOC->MODER |= (1 << 0);
 	
-	// set PB6 AFRL to 0001: AF1
-	GPIOB->AFR[0] &= ~(0xf << GPIO_AFRL_AFRL6_Pos);
-	GPIOB->AFR[0] |= (0x1 << GPIO_AFRL_AFRL6_Pos);
-	// set PB7 AFRL to 0001: AF1
-	GPIOB->AFR[0] &= ~(0xf << GPIO_AFRL_AFRL7_Pos);
-	GPIOB->AFR[0] |= (0x1 << GPIO_AFRL_AFRL7_Pos);
-	// set PB8 AFRL to 0001: AF1
-	GPIOB->AFR[1] &= ~(0xf << GPIO_AFRH_AFSEL8_Pos);
-	GPIOB->AFR[1] |= (0x1 << GPIO_AFRH_AFSEL8_Pos);
-	// set PB9 AFRL to 0001: AF1
-	GPIOB->AFR[1] &= ~(0xf << GPIO_AFRH_AFSEL9_Pos);
-	GPIOB->AFR[1] |= (0x1 << GPIO_AFRH_AFSEL9_Pos);
+	// set PB11 AFRR to 0001: AF1
+	GPIOB->AFR[1] &= ~(0xf << GPIO_AFRH_AFSEL11_Pos);
+	GPIOB->AFR[1] |= (0x1 << GPIO_AFRH_AFSEL11_Pos);
+	// set PB13 AFRR to 0101: AF5
+	GPIOB->AFR[1] &= ~(0xf << GPIO_AFRH_AFSEL13_Pos);
+	GPIOB->AFR[1] |= (0x5 << GPIO_AFRH_AFSEL13_Pos);
+
+	// set PB11 and PB13 to output open-drain
+	GPIOB->OTYPER |= (GPIO_OTYPER_OT_11);
+	GPIOB->OTYPER |= (GPIO_OTYPER_OT_13);
+	// set PB14 and PC0 to push-pull output type
+	GPIOB->OTYPER &= (~GPIO_OTYPER_OT_14);
+	GPIOC->OTYPER &= (~GPIO_OTYPER_OT_0);
 	
-	// set PB6, 7, 8, 9 to output open-drain
-	GPIOB->OTYPER |= (GPIO_OTYPER_OT_6);
-	GPIOB->OTYPER |= (GPIO_OTYPER_OT_7);
-	GPIOB->OTYPER |= (GPIO_OTYPER_OT_8);
-	GPIOB->OTYPER |= (GPIO_OTYPER_OT_9);
+	// initialize the PB14 and PC0 to high.
+	GPIOB->ODR |= (1 << 14);
+	GPIOC->ODR |= (1 << 0);
 }
 
 void initI2C(void) {
