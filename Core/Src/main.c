@@ -56,8 +56,8 @@ void SystemClock_Config(void);
 void init_I2C_GPIO(void);
 void initI2C(void);
 void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR);
-uint32_t readReg(uint8_t slaveAddr, uint32_t writeAddr);
-void writeReg(uint8_t slaveAddr, uint32_t writeData);
+uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes);
+void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData);
 
 /**
   * @brief  The application entry point.
@@ -193,6 +193,7 @@ void init_I2C_GPIO(void) {
 	GPIOC->ODR |= (1 << 0);
 }
 
+
 void transmitOneChar(uint8_t ch) {
   while ((USART3->ISR & USART_ISR_TXE) == 0) {
 	}
@@ -237,6 +238,7 @@ void initUsart3(void) {
 	USART3->CR1 |= USART_CR1_UE;
 }
 
+
 char slaveNoRepMsg[20] = "Slave no response!";
 
 void initI2C(void) {
@@ -255,7 +257,7 @@ void initI2C(void) {
 }
 
 void lab5_1(void) {
-  uint32_t readData = readReg(0x6B, 0x0F);
+  uint32_t readData = readReg(0x6B, 0x0F, 1);
 	if (readData == 0xD4) {
 		transmitCharArray("lab5_1: read data match");
 	} else {
@@ -263,8 +265,22 @@ void lab5_1(void) {
 	}
 }
 
+void initGyroscope(void) {
+  uint8_t l3gd20_ctrl_reg1 = 0;
+	// Enable the X and Y sensing axes in the CTRL_REG1 register.
+	l3gd20_ctrl_reg1 |= (0x1 | (0x1 << 1));
+	// Set the sensor into “normal or sleep mode” using the PD bit
+	l3gd20_ctrl_reg1 |= (0x1 << 3);
+	writeReg(0x6B, 0x20, l3gd20_ctrl_reg1);
+}
+
 void lab5_2(void) {
-  
+  initGyroscope();
+	while(1) {
+	  uint32_t rdx = readReg(0x6B, 0xA8, 2);
+    uint32_t rdy = readReg(0x6B, 0xAA, 2);
+		
+	}
 }
 
 // wOrR = 0, write; wOrR = 1, read
@@ -289,7 +305,7 @@ void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
 }
 
 
-void writeReg(uint8_t slaveAddr, uint32_t writeData) {
+void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData) {
   setUpSlaveTransaction(slaveAddr, 1, 0);
 	// Wait until either of the TXIS or NACKF flags are set
 	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
@@ -298,18 +314,24 @@ void writeReg(uint8_t slaveAddr, uint32_t writeData) {
 	  transmitCharArray(slaveNoRepMsg);
 	}
 	// Write the address of the “WHO_AM_I” register into the I2C transmit register
-	I2C2->TXDR = writeData;
+	I2C2->TXDR = writeRegAddr;
 	
 	// Wait until the TC (Transfer Complete) flag is set.
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
 	}
+  I2C2->TXDR = writeData;
 
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
 	// Set the STOP bit in the CR2 register to release the I2C bus.
 	I2C1->CR2 |= I2C_CR2_STOP;
 }
 
 
-uint32_t readReg(uint8_t slaveAddr, uint32_t writeAddr) {
+
+// nbytes <= 4
+uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 	setUpSlaveTransaction(slaveAddr, 1, 0);
 	// Wait until either of the TXIS or NACKF flags are set
 	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
@@ -332,14 +354,19 @@ uint32_t readReg(uint8_t slaveAddr, uint32_t writeAddr) {
 	if (I2C2->ISR & I2C_ISR_NACKF) {
 	  transmitCharArray(slaveNoRepMsg);
 	}
+	uint32_t readData = 0;
+	while (nbytes > 0) {
+	  // Wait until the TC (Transfer Complete) flag is set.
+	  while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	  }
 	
-	// Wait until the TC (Transfer Complete) flag is set.
-	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	  uint8_t rd = I2C2->RXDR;
+	  readData = ((readData << 8) | rd);
+		nbytes--;
 	}
-	
-	uint32_t readData = I2C2->RXDR;
 	// Set the STOP bit in the CR2 register to release the I2C bus.
 	I2C1->CR2 |= I2C_CR2_STOP;
+
 	return readData;
 }
 
