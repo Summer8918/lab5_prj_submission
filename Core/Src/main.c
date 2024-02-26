@@ -56,6 +56,8 @@ void SystemClock_Config(void);
 void init_I2C_GPIO(void);
 void initI2C(void);
 void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR);
+uint32_t readReg(uint8_t slaveAddr, uint32_t writeAddr);
+void writeReg(uint8_t slaveAddr, uint32_t writeData);
 
 /**
   * @brief  The application entry point.
@@ -250,39 +252,19 @@ void initI2C(void) {
 	
 	// Enable I2C peripheral
 	I2C2->CR1 |= I2C_CR1_PECEN;
-	setUpSlaveTransaction(0x6B, 1, 0);
-	// Wait until either of the TXIS or NACKF flags are set
-	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
-	}
-	if (I2C2->ISR & I2C_ISR_NACKF) {
-	  transmitCharArray(slaveNoRepMsg);
-	}
-	// Write the address of the “WHO_AM_I” register into the I2C transmit register
-	I2C2->TXDR = 0x0F;
-	// Wait until the TC (Transfer Complete) flag is set.
-	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
-	}
-	// start read operation
-	setUpSlaveTransaction(0x6B, 1, 1);
-	
-	// Wait until either of the RXNE or NACKF flags are set
-	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
-	}
-	
-	if (I2C2->ISR & I2C_ISR_NACKF) {
-	  transmitCharArray(slaveNoRepMsg);
-	}
-	
-	// Wait until the TC (Transfer Complete) flag is set.
-	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
-	}
-	
-	uint8_t readData = I2C2->RXDR;
+}
+
+void lab5_1(void) {
+  uint32_t readData = readReg(0x6B, 0x0F);
 	if (readData == 0xD4) {
-		transmitCharArray("read data match");
+		transmitCharArray("lab5_1: read data match");
 	} else {
-	  transmitCharArray("read data not match");
+	  transmitCharArray("lab5_1: read data not match");
 	}
+}
+
+void lab5_2(void) {
+  
 }
 
 // wOrR = 0, write; wOrR = 1, read
@@ -304,6 +286,61 @@ void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
 	
 	// Setting the START bit to begin the address frame.
 	I2C1->CR2 |= I2C_CR2_START;
+}
+
+
+void writeReg(uint8_t slaveAddr, uint32_t writeData) {
+  setUpSlaveTransaction(slaveAddr, 1, 0);
+	// Wait until either of the TXIS or NACKF flags are set
+	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+	}
+	if (I2C2->ISR & I2C_ISR_NACKF) {
+	  transmitCharArray(slaveNoRepMsg);
+	}
+	// Write the address of the “WHO_AM_I” register into the I2C transmit register
+	I2C2->TXDR = writeData;
+	
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
+
+	// Set the STOP bit in the CR2 register to release the I2C bus.
+	I2C1->CR2 |= I2C_CR2_STOP;
+}
+
+
+uint32_t readReg(uint8_t slaveAddr, uint32_t writeAddr) {
+	setUpSlaveTransaction(slaveAddr, 1, 0);
+	// Wait until either of the TXIS or NACKF flags are set
+	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+	}
+	if (I2C2->ISR & I2C_ISR_NACKF) {
+	  transmitCharArray(slaveNoRepMsg);
+	}
+	// Write the address of the “WHO_AM_I” register into the I2C transmit register
+	I2C2->TXDR = writeAddr;
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
+	// start read operation
+	setUpSlaveTransaction(slaveAddr, 1, 1);
+	
+	// Wait until either of the RXNE or NACKF flags are set
+	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+	}
+	
+	if (I2C2->ISR & I2C_ISR_NACKF) {
+	  transmitCharArray(slaveNoRepMsg);
+	}
+	
+	// Wait until the TC (Transfer Complete) flag is set.
+	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+	}
+	
+	uint32_t readData = I2C2->RXDR;
+	// Set the STOP bit in the CR2 register to release the I2C bus.
+	I2C1->CR2 |= I2C_CR2_STOP;
+	return readData;
 }
 
 #ifdef  USE_FULL_ASSERT
