@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#define THRESHOLD 20
+#define THRESHOLD 2000
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -284,18 +284,13 @@ void initGyroscope(void) {
 	l3gd20_ctrl_reg1 |= (0x1 << 3);
 	writeReg(0x69, 0x20, l3gd20_ctrl_reg1);
 	uint8_t reg = readReg(0x69, 0x20, 1);
-	while (reg != l3gd20_ctrl_reg1) {
-		if (reg == l3gd20_ctrl_reg1) {
-		  transmitCharArray("wrtie data match");
-			break;
-	  } else {
-	    transmitCharArray("write data not match, reg:\n");
-			turnUint32ToBinaryStr(reg);
-		  writeReg(0x69, 0x20, l3gd20_ctrl_reg1);
-	    reg = readReg(0x69, 0x20, 1);
-	  }
-	}
-	
+	if (reg == l3gd20_ctrl_reg1) {
+		transmitCharArray("wrtie data match");
+	} else {
+	  transmitCharArray("write data not match, retry, reg:\n");
+		turnUint32ToBinaryStr(reg);
+		writeReg(0x69, 0x20, l3gd20_ctrl_reg1);
+  }
 }
 
 int16_t twosCompToDec(uint16_t two_compliment_val)
@@ -422,33 +417,33 @@ void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
 
 
 void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData) {
-  setUpSlaveTransaction(slaveAddr, 1, 0);
+  setUpSlaveTransaction(slaveAddr, 2, 0);
+	transmitCharArray("CR2:");
+	turnUint32ToBinaryStr(I2C2->CR2);
 	// Wait until either of the TXIS or NACKF flags are set
 	transmitCharArray("Wait until either of the TXIS or NACKF flags are set.\n");
 	while ((I2C2->ISR & I2C_ISR_TXIS) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
 	}
-	transmitCharArray("either of the TXIS or NACKF flags are set.\n");
+	
 	if (I2C2->ISR & I2C_ISR_NACKF) {
 	  transmitCharArray(slaveNoRepMsg);
+		return;
 	}
+	transmitCharArray("0: The TXIS flags are set.\n");
 	// Write the address of the register into the I2C transmit register
 	I2C2->TXDR = writeRegAddr;
 	transmitCharArray("Wait until the I2C_ISR_TXIS flag is set.");
 	// Wait until the TC (Transfer Complete) flag is set.
 	while ((I2C2->ISR & I2C_ISR_TXIS) == 0) { 
 	}
-  transmitCharArray("I2C_ISR_TXIS is set.");
-	// Set the STOP bit in the CR2 register to release the I2C bus.
-	
+  transmitCharArray("1: I2C_ISR_TXIS is set.");
+
 	I2C2->TXDR = writeData;
-	transmitCharArray("Wait until the I2C_ISR_TXIS flag is set.");
-	// Wait until the TC (Transfer Complete) flag is set.
-	while ((I2C2->ISR & I2C_ISR_TXIS) == 0) { 
-	}
-  transmitCharArray("I2C_ISR_TXIS is set.");
+
   transmitCharArray("Wait until the TC (Transfer Complete) flag is set.");
 	// Wait until the TC (Transfer Complete) flag is set.
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
+		
 	}
 	transmitCharArray("TC (Transfer Complete) flag is set.");
 	I2C2->CR2 |= I2C_CR2_STOP;
