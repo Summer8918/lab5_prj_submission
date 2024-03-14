@@ -58,7 +58,10 @@ void initI2C(void);
 void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR);
 uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes);
 void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData);
+void lab5_1(void);
+void transmitCharArray (char *arr);
 
+void turnUint32ToBinaryStr(uint32_t x);
 /**
   * @brief  The application entry point.
   * @retval int
@@ -92,6 +95,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	lab5_1();
   while (1)
   {
     /* USER CODE END WHILE */
@@ -160,7 +164,9 @@ void init_I2C_GPIO(void) {
   // Enable peripheral clock to PB and PC
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
-
+	// set PB15 to input mode(reset) 00
+  GPIOB->MODER &= ~(1 << 31);
+	GPIOB->MODER &= ~(1 << 30);
 	// set PB11 to AF mode, 10
 	GPIOB->MODER |= (1 << 23);
 	GPIOB->MODER &= ~(1 << 22);
@@ -180,7 +186,7 @@ void init_I2C_GPIO(void) {
 	// set PB13 AFRR to 0101: AF5
 	GPIOB->AFR[1] &= ~(0xf << GPIO_AFRH_AFSEL13_Pos);
 	GPIOB->AFR[1] |= (0x5 << GPIO_AFRH_AFSEL13_Pos);
-
+  
 	// set PB11 and PB13 to output open-drain
 	GPIOB->OTYPER |= (GPIO_OTYPER_OT_11);
 	GPIOB->OTYPER |= (GPIO_OTYPER_OT_13);
@@ -191,6 +197,12 @@ void init_I2C_GPIO(void) {
 	// initialize the PB14 and PC0 to high.
 	GPIOB->ODR |= (1 << 14);
 	GPIOC->ODR |= (1 << 0);
+	transmitCharArray("GPIOB->AFR[1]:\n");
+	turnUint32ToBinaryStr(GPIOB->AFR[1]);
+	transmitCharArray("GPIOB->OTYPER :\n");
+	turnUint32ToBinaryStr(GPIOB->OTYPER);
+	transmitCharArray("GPIOC->OTYPER  :\n");
+	turnUint32ToBinaryStr(GPIOB->OTYPER);
 }
 
 
@@ -244,24 +256,31 @@ char slaveNoRepMsg[20] = "Slave no response!";
 void initI2C(void) {
   init_I2C_GPIO();
 	// Enable the I2C2 peripheral in the RCC.
-	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+	RCC->APB1ENR |= RCC_APB1ENR_I2C2EN;
 	// Config I2C Bus Timing
 	I2C2->TIMINGR |= (0x1 << I2C_TIMINGR_PRESC_Pos);
 	I2C2->TIMINGR |= (0x13 << I2C_TIMINGR_SCLL_Pos);
 	I2C2->TIMINGR |= (0xF << I2C_TIMINGR_SCLH_Pos);
 	I2C2->TIMINGR |= (0x2 << I2C_TIMINGR_SDADEL_Pos);
 	I2C2->TIMINGR |= (0x4 << I2C_TIMINGR_SCLDEL_Pos);
+	// Enable I2C peripheral sing the PE bit in the CR1 register
+	I2C2->CR1 |= I2C_CR1_PE;
 	
-	// Enable I2C peripheral
-	I2C2->CR1 |= I2C_CR1_PECEN;
+	transmitCharArray("CR1:\n");
+	turnUint32ToBinaryStr(I2C2->CR1);
 }
 
 void lab5_1(void) {
-  uint32_t readData = readReg(0x6B, 0x0F, 1);
-	if (readData == 0xD4) {
-		transmitCharArray("lab5_1: read data match");
+	initUsart3();
+	initI2C();
+	transmitCharArray("lab5_1: hello");
+  uint32_t readData = readReg(0x69, 0xF, 1);
+	transmitCharArray("Read data:\n");
+	turnUint32ToBinaryStr(readData);
+	if (readData == 0xD3) {
+		transmitCharArray("read data match");
 	} else {
-	  transmitCharArray("lab5_1: read data not match");
+	  transmitCharArray("read data not match");
 	}
 }
 
@@ -273,6 +292,7 @@ void initGyroscope(void) {
 	l3gd20_ctrl_reg1 |= (0x1 << 3);
 	writeReg(0x6B, 0x20, l3gd20_ctrl_reg1);
 }
+
 
 void lab5_2(void) {
   initGyroscope();
@@ -286,22 +306,24 @@ void lab5_2(void) {
 // wOrR = 0, write; wOrR = 1, read
 void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
 	// Set the slave address in the SADD[7:1] bit field
-	I2C1->CR2 &= (~I2C_CR2_SADD_Msk);
-  I2C1->CR2 |= (slaveAddr << 1);  //[7:1] is the slave address
-
-	I2C1->CR2 &= (~I2C_CR2_NBYTES_Msk);
+	I2C2->CR2 &= (~I2C_CR2_SADD_Msk);
+	
+  I2C2->CR2 |= (slaveAddr << 1);  //[7:1] is the slave address
+	// I2C2->CR2 &= (~I2C_CR2_NBYTES);
+	I2C2->CR2 &= ~((0x7F << I2C_CR2_NBYTES_Pos));
 	// Set the number of data byte to be transmitted in the NBYTES[7:0] bit field.
-	I2C1->CR2 |= (nBytes << I2C_CR2_NBYTES_Pos);
-
-	I2C1->CR2 &= (~I2C_CR2_RD_WRN_Msk);
+	I2C2->CR2 |= (nBytes << I2C_CR2_NBYTES_Pos);
+	I2C2->CR2 &= (~I2C_CR2_RD_WRN);
 	// Configure the RD_WRN to indicate a read/write operation.
-	I2C1->CR2 |= (wOrR << I2C_CR2_RD_WRN_Pos);
+	if (wOrR == 1) {
+		I2C2->CR2 |= (0x1 << I2C_CR2_RD_WRN_Pos);
+	}
 
 	// Do not set the AUTOEND bit, this lab requires software start/stop operation. 
-	I2C1->CR2 &= (~I2C_CR2_AUTOEND_Msk);
-	
-	// Setting the START bit to begin the address frame.
-	I2C1->CR2 |= I2C_CR2_START;
+	I2C2->CR2 &= (~I2C_CR2_AUTOEND_Msk);
+
+	// Set the START bit to begin the address frame.
+	I2C2->CR2 |= (I2C_CR2_START);
 }
 
 
@@ -325,36 +347,60 @@ void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData) {
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
 	}
 	// Set the STOP bit in the CR2 register to release the I2C bus.
-	I2C1->CR2 |= I2C_CR2_STOP;
+	I2C2->CR2 |= I2C_CR2_STOP;
 }
 
-
+void turnUint32ToBinaryStr(uint32_t x){
+	char str[32];
+	uint32_t i = 0;
+	while (i < 32) {
+		str[31-i] = '0' + ((x >> i) & 0x1);
+	  i++;
+	}
+	transmitCharArray(str);
+}
 
 // nbytes <= 4
 uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 	setUpSlaveTransaction(slaveAddr, 1, 0);
-	// Wait until either of the TXIS or NACKF flags are set
-	while ((I2C2->ISR & I2C_ISR_TXE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+
+	while (1) {
+		if ((I2C2->ISR & I2C_ISR_TXIS) != 0) {
+			transmitCharArray("(I2C2->ISR & I2C_ISR_TXIS) != 0");
+			break;
+		}
+		if ((I2C2->ISR & I2C_ISR_NACKF) != 0) {
+			transmitCharArray("(I2C2->ISR & I2C_ISR_NACKF) != 0");
+			break;
+		}
 	}
+
+	transmitCharArray("the TXIS or NACKF flags are set.\n");
 	if (I2C2->ISR & I2C_ISR_NACKF) {
 	  transmitCharArray(slaveNoRepMsg);
 	}
+	transmitCharArray("ISR:\n");
+	turnUint32ToBinaryStr(I2C2->ISR);
+	
 	// Write the address of the “WHO_AM_I” register into the I2C transmit register
 	I2C2->TXDR = writeAddr;
 	// Wait until the TC (Transfer Complete) flag is set.
+	transmitCharArray("Wait the TC (Transfer Complete) flag is set.");
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
 	}
+	transmitCharArray("the TC (Transfer Complete) flag is set.");
 	// start read operation
 	setUpSlaveTransaction(slaveAddr, 1, 1);
-	
+	transmitCharArray("Wait until either of the RXNE or NACKF flags are set");
 	// Wait until either of the RXNE or NACKF flags are set
 	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
 	}
-	
+	transmitCharArray("either of the RXNE or NACKF flags are set");
 	if (I2C2->ISR & I2C_ISR_NACKF) {
 	  transmitCharArray(slaveNoRepMsg);
 	}
 	uint32_t readData = 0;
+	transmitCharArray("start read");
 	while (nbytes > 0) {
 	  // Wait until the TC (Transfer Complete) flag is set.
 	  while ((I2C2->ISR & I2C_ISR_TC) == 0) {
@@ -365,7 +411,7 @@ uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 		nbytes--;
 	}
 	// Set the STOP bit in the CR2 register to release the I2C bus.
-	I2C1->CR2 |= I2C_CR2_STOP;
+	I2C2->CR2 |= I2C_CR2_STOP;
 
 	return readData;
 }
