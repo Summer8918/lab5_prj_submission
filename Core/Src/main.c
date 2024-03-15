@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#define THRESHOLD 2000
+#define THRESHOLD 200
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -345,17 +345,12 @@ void lab5_2(void) {
   initGyroscope();
 	// blue LED (PC7), channel 2, red LED PC6, Channel 1, green LED PC9, orange LED PC8
 	while(1) {
-	  uint32_t lrdx = readReg(0x69, 0x28, 1);
-		transmitCharArray("lx:\n");
-	  turnUint32ToBinaryStr(lrdx);
-		uint32_t hrdx = readReg(0x69, 0x29, 1);
-		transmitCharArray("hx:\n");
-		turnUint32ToBinaryStr(hrdx);
-		uint32_t rdx = ((hrdx << 8) | lrdx);
-		transmitCharArray("rdx:");
-		turnUint32ToBinaryStr(rdx);
-		transmitCharArray("\n");
-		int16_t xDec = twosCompToDec((uint16_t)rdx);
+		transmitCharArray("big while loop\n");
+	  uint32_t rdx = readReg(0x69, 0xA8, 2);
+		// rdx = ldx (15:8) + hdx (7:0)
+		int16_t xDec = twosCompToDec((uint16_t)((rdx >> 8) | ((rdx & 0xff) << 8)));
+		//transmitCharArray("rdx:\n");
+	  //turnUint32ToBinaryStr(xDec);
 		if (xDec > 0 && xDec > THRESHOLD) {
 			GPIOC->ODR |= (1 << 8);
 			GPIOC->ODR &= ~(1 << 9);
@@ -366,18 +361,8 @@ void lab5_2(void) {
 		  GPIOC->ODR &= ~(1 << 9);
 			GPIOC->ODR &= ~(1 << 8);
 		}
-		uint32_t lrdy = readReg(0x69, 0x2A, 1);
-		transmitCharArray("ly:\n");
-		turnUint32ToBinaryStr(lrdx);
-		uint32_t hrdy = readReg(0x69, 0x2B, 1);
-		transmitCharArray("hy:\n");
-		turnUint32ToBinaryStr(hrdx);
-		uint32_t rdy = ((hrdy << 8) | lrdy);
-		transmitCharArray("rdy:");
-		turnUint32ToBinaryStr(rdx);
-		transmitCharArray("\n");
-		
-		int16_t yDec = twosCompToDec((uint16_t)rdy);
+		uint32_t rdy = readReg(0x69, 0xAA, 2);
+		int16_t yDec = twosCompToDec((uint16_t)((rdy >> 8) | ((rdy & 0xff) << 8)));
 		if (yDec > 0 && yDec > THRESHOLD) {
 			GPIOC->ODR |= (1 << 6);
 			GPIOC->ODR &= ~(1 << 7);
@@ -494,23 +479,24 @@ uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 	}
 	transmitCharArray("the TC (Transfer Complete) flag is set.");
 	// start read operation
-	setUpSlaveTransaction(slaveAddr, 1, nbytes);
+	setUpSlaveTransaction(slaveAddr, nbytes, 1);
 	transmitCharArray("Wait until either of the RXNE or NACKF flags are set");
 	// Wait until either of the RXNE or NACKF flags are set
-	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && 0) {
+	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF)) {
 	}
 
 	uint32_t readData = 0;
-	transmitCharArray("start read");
-	while (nbytes > 0) {
+	transmitCharArray("start read\n");
+	while (nbytes != 0) {
 	  //wait for RXNE or NACKF flag are set
-	  while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
+		transmitCharArray("wait for RXNE or NACKF flag are set");
+	  while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0 && (I2C2->ISR & I2C_ISR_TC) == 0) {
 	  }
 	  if (I2C2->ISR & I2C_ISR_NACKF) {
 	    transmitCharArray(slaveNoRepMsg);
 			break;
 	  }
-	  transmitCharArray("either of the RXNE flags are set");
+	  transmitCharArray("The RXNE flags are set");
 	  uint8_t rd = I2C2->RXDR;
 	  readData = ((readData << 8) | rd);
 		nbytes--;

@@ -3,9 +3,9 @@
 <title>Static Call Graph - [lab5_prj\lab5_prj.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image lab5_prj\lab5_prj.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6210000: Last Updated: Thu Mar 14 13:13:40 2024
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6210000: Last Updated: Fri Mar 15 15:09:02 2024
 <BR><P>
-<H3>Maximum Stack Usage =        264 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        224 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 __rt_entry_main &rArr; main &rArr; lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
 <P>
@@ -186,7 +186,7 @@ Global Symbols
 <P><STRONG><a name="[75]"></a>__rt_entry_postsh_1</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$00000009))
 
 <P><STRONG><a name="[30]"></a>__rt_entry_main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$0000000D))
-<BR><BR>[Stack]<UL><LI>Max Depth = 264 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 224 + Unknown Stack Size
 <LI>Call Chain = __rt_entry_main &rArr; main &rArr; lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
 </UL>
 <BR>[Calls]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
@@ -494,8 +494,8 @@ Global Symbols
 <P><STRONG><a name="[4a]"></a>initGyroscope</STRONG> (Thumb, 564 bytes, Stack size 16 bytes, main.o(.text.initGyroscope))
 <BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
 </UL>
-<BR>[Calls]<UL><LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;writeReg
-<LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;turnUint32ToBinaryStr
+<BR>[Calls]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;turnUint32ToBinaryStr
+<LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;writeReg
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readReg
 </UL>
 <BR>[Called By]<UL><LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lab5_2
@@ -508,7 +508,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[4e]"></a>lab5_1</STRONG> (Thumb, 1438 bytes, Stack size 32 bytes, main.o(.text.lab5_1))
-<BR><BR>[Stack]<UL><LI>Max Depth = 144<LI>Call Chain = lab5_1 &rArr; readReg
+<BR><BR>[Stack]<UL><LI>Max Depth = 136<LI>Call Chain = lab5_1 &rArr; readReg
 </UL>
 <BR>[Calls]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readReg
 <LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initI2C
@@ -518,11 +518,10 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[31]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[51]"></a>lab5_2</STRONG> (Thumb, 1140 bytes, Stack size 56 bytes, main.o(.text.lab5_2))
-<BR><BR>[Stack]<UL><LI>Max Depth = 192<LI>Call Chain = lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
+<P><STRONG><a name="[51]"></a>lab5_2</STRONG> (Thumb, 720 bytes, Stack size 16 bytes, main.o(.text.lab5_2))
+<BR><BR>[Stack]<UL><LI>Max Depth = 152<LI>Call Chain = lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
 </UL>
-<BR>[Calls]<UL><LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;turnUint32ToBinaryStr
-<LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<BR>[Calls]<UL><LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[4a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initGyroscope
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;readReg
 </UL>
@@ -530,7 +529,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[31]"></a>main</STRONG> (Thumb, 88 bytes, Stack size 72 bytes, main.o(.text.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 264<LI>Call Chain = main &rArr; lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
+<BR><BR>[Stack]<UL><LI>Max Depth = 224<LI>Call Chain = main &rArr; lab5_2 &rArr; initGyroscope &rArr; writeReg &rArr; turnUint32ToBinaryStr
 </UL>
 <BR>[Calls]<UL><LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lab5_2
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lab5_1
@@ -542,8 +541,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[30]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_entry_main
 </UL>
 
-<P><STRONG><a name="[4c]"></a>readReg</STRONG> (Thumb, 5428 bytes, Stack size 112 bytes, main.o(.text.readReg))
-<BR><BR>[Stack]<UL><LI>Max Depth = 112<LI>Call Chain = readReg
+<P><STRONG><a name="[4c]"></a>readReg</STRONG> (Thumb, 5416 bytes, Stack size 104 bytes, main.o(.text.readReg))
+<BR><BR>[Stack]<UL><LI>Max Depth = 104<LI>Call Chain = readReg
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initGyroscope
 <LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lab5_2
@@ -555,7 +554,6 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;writeReg
 <LI><a href="#[4a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initGyroscope
-<LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lab5_2
 </UL>
 
 <P><STRONG><a name="[4b]"></a>writeReg</STRONG> (Thumb, 3044 bytes, Stack size 88 bytes, main.o(.text.writeReg))
