@@ -283,6 +283,7 @@ void initGyroscope(void) {
 	// Set the sensor into “normal or sleep mode” using the PD bit
 	l3gd20_ctrl_reg1 |= (0x1 << 3);
 	writeReg(0x69, 0x20, l3gd20_ctrl_reg1);
+	transmitCharArray("wrtie data success\n");
 	uint8_t reg = readReg(0x69, 0x20, 1);
 	if (reg == l3gd20_ctrl_reg1) {
 		transmitCharArray("wrtie data match");
@@ -345,7 +346,7 @@ void lab5_2(void) {
   initGyroscope();
 	// blue LED (PC7), channel 2, red LED PC6, Channel 1, green LED PC9, orange LED PC8
 	while(1) {
-		transmitCharArray("big while loop\n");
+		//transmitCharArray("big while loop\n");
 	  uint32_t rdx = readReg(0x69, 0xA8, 2);
 		// rdx = ldx (15:8) + hdx (7:0)
 		int16_t xDec = twosCompToDec((uint16_t)((rdx >> 8) | ((rdx & 0xff) << 8)));
@@ -361,7 +362,9 @@ void lab5_2(void) {
 		  GPIOC->ODR &= ~(1 << 9);
 			GPIOC->ODR &= ~(1 << 8);
 		}
+		HAL_Delay(50);
 		uint32_t rdy = readReg(0x69, 0xAA, 2);
+		
 		int16_t yDec = twosCompToDec((uint16_t)((rdy >> 8) | ((rdy & 0xff) << 8)));
 		if (yDec > 0 && yDec > THRESHOLD) {
 			GPIOC->ODR |= (1 << 6);
@@ -373,7 +376,7 @@ void lab5_2(void) {
 		  GPIOC->ODR &= ~(1 << 7);
 			GPIOC->ODR &= ~(1 << 6);
 		}
-		HAL_Delay(100);
+		HAL_Delay(50);
 	}
 }
 
@@ -403,10 +406,10 @@ void setUpSlaveTransaction(uint8_t slaveAddr, uint8_t nBytes, uint8_t wOrR) {
 
 void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData) {
   setUpSlaveTransaction(slaveAddr, 2, 0);
-	transmitCharArray("CR2:");
-	turnUint32ToBinaryStr(I2C2->CR2);
+	//transmitCharArray("CR2:");
+	//turnUint32ToBinaryStr(I2C2->CR2);
 	// Wait until either of the TXIS or NACKF flags are set
-	transmitCharArray("Wait until either of the TXIS or NACKF flags are set.\n");
+	//transmitCharArray("Wait until either of the TXIS or NACKF flags are set.\n");
 	while ((I2C2->ISR & I2C_ISR_TXIS) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
 	}
 	
@@ -414,26 +417,26 @@ void writeReg(uint8_t slaveAddr, uint8_t writeRegAddr, uint8_t writeData) {
 	  transmitCharArray(slaveNoRepMsg);
 		return;
 	}
-	transmitCharArray("0: The TXIS flags are set.\n");
+	//transmitCharArray("0: The TXIS flags are set.\n");
 	// Write the address of the register into the I2C transmit register
 	I2C2->TXDR = writeRegAddr;
-	transmitCharArray("Wait until the I2C_ISR_TXIS flag is set.");
+	//transmitCharArray("Wait until the I2C_ISR_TXIS flag is set.");
 	// Wait until the TC (Transfer Complete) flag is set.
 	while ((I2C2->ISR & I2C_ISR_TXIS) == 0) { 
 	}
-  transmitCharArray("1: I2C_ISR_TXIS is set.");
+  //transmitCharArray("1: I2C_ISR_TXIS is set.");
 
 	I2C2->TXDR = writeData;
 
-  transmitCharArray("Wait until the TC (Transfer Complete) flag is set.");
+  //transmitCharArray("Wait until the TC (Transfer Complete) flag is set.");
 	// Wait until the TC (Transfer Complete) flag is set.
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
 		
 	}
-	transmitCharArray("TC (Transfer Complete) flag is set.");
+	//transmitCharArray("TC (Transfer Complete) flag is set.");
 	I2C2->CR2 |= I2C_CR2_STOP;
-	transmitCharArray("Write Reg Stop CR2\n");
-	turnUint32ToBinaryStr(I2C2->CR2);
+	//transmitCharArray("Write Reg Stop CR2\n");
+	//turnUint32ToBinaryStr(I2C2->CR2);
 }
 
 void turnUint32ToBinaryStr(uint32_t x){
@@ -449,13 +452,13 @@ void turnUint32ToBinaryStr(uint32_t x){
 // nbytes <= 4
 uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 	setUpSlaveTransaction(slaveAddr, 1, 0);
-  transmitCharArray("In readReg function.\n");
+  //transmitCharArray("In readReg function.\n");
 	//transmitCharArray("I2C2->CR2:");
 	//turnUint32ToBinaryStr(I2C2->CR2);
-  transmitCharArray("wait either the TXIS or NACKF flags are set.");
+  //transmitCharArray("wait either the TXIS or NACKF flags are set.");
 	while (1) {
 		if ((I2C2->ISR & I2C_ISR_TXIS) != 0) {
-			transmitCharArray("(I2C2->ISR & I2C_ISR_TXIS) != 0");
+			//transmitCharArray("(I2C2->ISR & I2C_ISR_TXIS) != 0");
 			break;
 		}
 		if ((I2C2->ISR & I2C_ISR_NACKF) != 0) {
@@ -464,7 +467,7 @@ uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 		}
 	}
 	
-	transmitCharArray("the TXIS or NACKF flags are set.\n");
+	//transmitCharArray("the TXIS or NACKF flags are set.\n");
 	if (I2C2->ISR & I2C_ISR_NACKF) {
 	  transmitCharArray(slaveNoRepMsg);
 	}
@@ -474,29 +477,30 @@ uint32_t readReg(uint8_t slaveAddr, uint8_t writeAddr, uint8_t nbytes) {
 	// Write the address of the “WHO_AM_I” register into the I2C transmit register
 	I2C2->TXDR = writeAddr;
 	// Wait until the TC (Transfer Complete) flag is set.
-	transmitCharArray("Wait the TC (Transfer Complete) flag is set.");
+	//transmitCharArray("Wait the TC (Transfer Complete) flag is set.");
 	while ((I2C2->ISR & I2C_ISR_TC) == 0) {
 	}
-	transmitCharArray("the TC (Transfer Complete) flag is set.");
+	//transmitCharArray("the TC (Transfer Complete) flag is set.");
 	// start read operation
 	setUpSlaveTransaction(slaveAddr, nbytes, 1);
-	transmitCharArray("Wait until either of the RXNE or NACKF flags are set");
+	//transmitCharArray("Wait until either of the RXNE or NACKF flags are set");
 	// Wait until either of the RXNE or NACKF flags are set
 	while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF)) {
 	}
 
 	uint32_t readData = 0;
-	transmitCharArray("start read\n");
+	//transmitCharArray("start read\n");
 	while (nbytes != 0) {
 	  //wait for RXNE or NACKF flag are set
-		transmitCharArray("wait for RXNE or NACKF flag are set");
-	  while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0 && (I2C2->ISR & I2C_ISR_TC) == 0) {
+		//transmitCharArray("wait for RXNE or NACKF flag are set");
+	  while ((I2C2->ISR & I2C_ISR_RXNE) == 0 && (I2C2->ISR & I2C_ISR_NACKF) == 0) {
 	  }
 	  if (I2C2->ISR & I2C_ISR_NACKF) {
 	    transmitCharArray(slaveNoRepMsg);
 			break;
 	  }
-	  transmitCharArray("The RXNE flags are set");
+		
+	  //transmitCharArray("The RXNE flags are set");
 	  uint8_t rd = I2C2->RXDR;
 	  readData = ((readData << 8) | rd);
 		nbytes--;
